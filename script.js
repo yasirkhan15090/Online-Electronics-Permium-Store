@@ -166,8 +166,85 @@ let state = {
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
+    checkUserLogin();
     initializeApp();
 });
+
+// Check if user is logged in
+function checkUserLogin() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const userMenuBtn = document.getElementById('user-menu-toggle');
+    
+    if (currentUser) {
+        // User is logged in - update UI
+        if (userMenuBtn) {
+            userMenuBtn.innerHTML = `👤 ${currentUser.username.split(' ')[0]}`;
+            userMenuBtn.onclick = showUserMenu;
+        }
+    } else {
+        // User not logged in - show login prompt
+        if (userMenuBtn) {
+            userMenuBtn.innerHTML = '👤 Login';
+            userMenuBtn.onclick = () => {
+                window.location.href = 'auth.html';
+            };
+        }
+    }
+}
+
+// Show user menu
+function showUserMenu() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) return;
+    
+    const menuHTML = `
+        <div style="position: absolute; top: 100%; right: 0; background: white; border-radius: 0.75rem; 
+                    box-shadow: 0 8px 24px var(--shadow-lg); padding: 1rem; min-width: 200px; z-index: 1000; margin-top: 0.5rem;">
+            <div style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                <div style="font-weight: 700;">${currentUser.username}</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary);">${currentUser.email}</div>
+            </div>
+            <button onclick="logout()" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem; background: var(--error); 
+                    color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">
+                Logout
+            </button>
+        </div>
+    `;
+    
+    // Remove existing menu if any
+    const existingMenu = document.querySelector('.user-menu-dropdown');
+    if (existingMenu) {
+        existingMenu.remove();
+        return;
+    }
+    
+    // Create menu
+    const menu = document.createElement('div');
+    menu.className = 'user-menu-dropdown';
+    menu.innerHTML = menuHTML;
+    document.getElementById('user-menu-toggle').parentElement.style.position = 'relative';
+    document.getElementById('user-menu-toggle').parentElement.appendChild(menu);
+    
+    // Close menu on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target) && e.target.id !== 'user-menu-toggle') {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 100);
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('rememberUser');
+    showNotification('Logged out successfully');
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
 
 function initializeApp() {
     // Show loading screen
